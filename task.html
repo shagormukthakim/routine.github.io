@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Tracker</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    header {
+      background-color: #3498db;
+      color: #fff;
+      text-align: center;
+      padding: 1em;
+      font-size: 24px;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    input {
+      font-size: 16px;
+      padding: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+    }
+
+    button {
+      background-color: #3498db;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #points {
+      font-size: 18px;
+      margin-top: 20px;
+    }
+
+    #calendar {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .calendar-day {
+      width: 80px;
+      padding: 8px;
+      margin: 4px;
+      text-align: center;
+      background-color: #3498db;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .calendar-day:hover {
+      background-color: #2078af;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Task</h1>
+  </header>
+
+  <main>
+    <label for="completedSubjects">Number of Subjects Completed (Max 3):</label>
+    <input type="number" id="completedSubjects" placeholder="Enter the number">
+
+    <label for="onlineClasses">Number of Online Classes (Max 5):</label>
+    <input type="number" id="onlineClasses" placeholder="Enter the number">
+
+    <label for="codePractice">Number of Code Practices (Max 5):</label>
+    <input type="number" id="codePractice" placeholder="Enter the number">
+
+    <label for="projects">Number of Projects (Max 2):</label>
+    <input type="number" id="projects" placeholder="Enter the number">
+
+    <label for="instagramGroup">Number of People Added to Instagram Group (Max 100):</label>
+    <input type="number" id="instagramGroup" placeholder="Enter the number">
+
+    <label for="instagramTalks">Number of People Talked to on Instagram (Max 200):</label>
+    <input type="number" id="instagramTalks" placeholder="Enter the number">
+
+    <label for="databasePractice">Database Practice Hours (Max 0.5):</label>
+    <input type="number" id="databasePractice" step="0.01" placeholder="Enter the hours">
+
+    <button onclick="calculatePoints()">Calculate Points</button>
+
+    <div id="points"></div>
+
+    <div id="calendar"></div>
+  </main>
+
+  <script>
+    function calculatePoints() {
+      const completedSubjects = parseInt(document.getElementById('completedSubjects').value) || 0;
+      const onlineClasses = parseInt(document.getElementById('onlineClasses').value) || 0;
+      const codePractice = parseInt(document.getElementById('codePractice').value) || 0;
+      const projects = parseInt(document.getElementById('projects').value) || 0;
+      const instagramGroup = parseInt(document.getElementById('instagramGroup').value) || 0;
+      const instagramTalks = parseInt(document.getElementById('instagramTalks').value) || 0;
+      const databasePractice = parseFloat(document.getElementById('databasePractice').value) || 0;
+
+      const maxSubjects = 3;
+      const maxOnlineClasses = 5;
+      const maxCodePractices = 5;
+      const maxProjects = 2;
+      const maxInstagramGroup = 100;
+      const maxInstagramTalks = 200;
+      const maxDatabasePractice = 0.5;
+
+      const totalMaxPoints = 700;
+      let earnedPoints = 0;
+
+      earnedPoints += Math.min((completedSubjects / maxSubjects) * 100, 100);
+      earnedPoints += Math.min((onlineClasses / maxOnlineClasses) * 100, 100);
+      earnedPoints += Math.min((codePractice / maxCodePractices) * 100, 100);
+      earnedPoints += Math.min((projects / maxProjects) * 100, 100);
+      earnedPoints += Math.min((instagramGroup / maxInstagramGroup) * 100, 100);
+      earnedPoints += Math.min((instagramTalks / maxInstagramTalks) * 100, 100);
+      earnedPoints += Math.min((databasePractice / maxDatabasePractice) * 100, 100);
+
+      const completionPercentage = (earnedPoints / totalMaxPoints) * 100;
+      document.getElementById('points').innerHTML = `Points earned: ${completionPercentage.toFixed(2)}%`;
+
+      // Save the percentage for the current day in localStorage
+      const currentDate = new Date().toISOString().split('T')[0];
+      localStorage.setItem(currentDate, completionPercentage.toFixed(2));
+      updateCalendar();
+    }
+
+    function updateCalendar() {
+      const calendarContainer = document.getElementById('calendar');
+      calendarContainer.innerHTML = '';
+
+      // Retrieve and display stored percentages for the last 7 days
+      for (let i = 0; i < 7; i++) {
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() - i);
+        const formattedDate = currentDate.toISOString().split('T')[0];
+
+        const storedPercentage = localStorage.getItem(formattedDate);
+
+        const calendarDay = document.createElement('div');
+        calendarDay.classList.add('calendar-day');
+        calendarDay.innerText = storedPercentage ? `${formattedDate}\n${storedPercentage}%` : formattedDate;
+        calendarDay.onclick = () => showStoredPercentage(storedPercentage);
+
+        calendarContainer.appendChild(calendarDay);
+      }
+    }
+
+    function showStoredPercentage(percentage) {
+      alert(`Percentage for selected day: ${percentage}%`);
+    }
+
+    // Call the function when the page loads
+    window.onload = () => {
+      calculatePoints();
+      updateCalendar();
+    };
+  </script>
+
+</body>
+</html>

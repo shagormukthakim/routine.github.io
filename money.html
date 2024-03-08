@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Management System</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+      text-align: center;
+    }
+
+    header {
+      background-color: #3498db;
+      color: #fff;
+      padding: 1em;
+      font-size: 24px;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    input {
+      font-size: 16px;
+      padding: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      background-color: #3498db;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    #result {
+      font-size: 18px;
+      margin-top: 20px;
+    }
+
+    #goalStatus {
+      font-size: 18px;
+      margin-top: 20px;
+    }
+
+    #savedDetailsContainer {
+      text-align: left;
+    }
+
+    #calendarContainer {
+      margin-top: 20px;
+    }
+
+    #datePicker {
+      font-size: 16px;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+
+    #perDayCalculation {
+      font-size: 18px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Money Management System</h1>
+  </header>
+
+  <main>
+    <label for="moneyEarned">Money Earned Today:</label>
+    <input type="number" id="moneyEarned" placeholder="Enter amount">
+
+    <label for="moneySpent">Money Spent Today:</label>
+    <input type="number" id="moneySpent" placeholder="Enter amount">
+
+    <button onclick="calculateAndSave()">Calculate and Save</button>
+  
+    <div id="result"></div>
+
+    <div id="goalStatus"></div>
+
+    <label for="spendFromSaved">Spend from Saved Money:</label>
+    <input type="number" id="spendFromSaved" placeholder="Enter amount">
+
+    <button onclick="calculateSpendFromSaved()">Spend from Saved Money</button>
+
+    <div id="savedDetailsContainer"></div>
+
+    <label for="datePicker">Select Date:</label>
+    <input type="date" id="datePicker">
+
+    <button onclick="displayDetailsForDate()">Show Details</button>
+
+    <div id="calendarContainer"></div>
+
+    <button onclick="calculatePerDayGoal()">Calculate Per Day Goal</button>
+
+    <div id="perDayCalculation"></div>
+  </main>
+
+  <script>
+    function calculateAndSave() {
+      const moneyEarned = parseFloat(document.getElementById('moneyEarned').value) || 0;
+      const moneySpent = parseFloat(document.getElementById('moneySpent').value) || 0;
+
+      const currentDate = new Date();
+      const dateString = currentDate.toDateString();
+
+      const dailyDetails = {
+        date: dateString,
+        earned: moneyEarned,
+        spent: moneySpent,
+      };
+
+      // Save daily details to localStorage
+      const savedDetails = JSON.parse(localStorage.getItem('moneyDetails')) || [];
+      savedDetails.push(dailyDetails);
+      localStorage.setItem('moneyDetails', JSON.stringify(savedDetails));
+
+      // Deduct from goal and display result
+      const goal = 72000; // $72,000 goal
+      const savedAmount = savedDetails.reduce((total, details) => total + details.earned - details.spent, 0);
+      const remainingAmount = goal - savedAmount;
+
+      const resultElement = document.getElementById('result');
+      resultElement.innerHTML = `Saved successfully for ${dateString}.`;
+
+      // Display goal status
+      const goalStatusElement = document.getElementById('goalStatus');
+      goalStatusElement.innerHTML = `Goal Status: $${remainingAmount} remaining out of $${goal}.`;
+
+      // Display saved details
+      displaySavedDetails();
+
+      // Display calendar
+      displayCalendar();
+    }
+
+    function calculateSpendFromSaved() {
+      const spendAmount = parseFloat(document.getElementById('spendFromSaved').value) || 0;
+
+      if (spendAmount <= 0) {
+        alert('Please enter a valid amount to spend.');
+        return;
+      }
+
+      const currentDate = new Date();
+      const dateString = currentDate.toDateString();
+
+      // Save spend details to localStorage
+      const spendDetails = {
+        date: dateString,
+        spent: spendAmount,
+      };
+
+      const spendHistory = JSON.parse(localStorage.getItem('spendHistory')) || [];
+      spendHistory.push(spendDetails);
+      localStorage.setItem('spendHistory', JSON.stringify(spendHistory));
+
+      // Deduct spend amount from goal and display result
+      const goal = 72000; // $72,000 goal
+      const remainingAmount = calculateRemainingAmount();
+      const resultElement = document.getElementById('result');
+      resultElement.innerHTML = `Spent successfully for ${dateString}.`;
+
+      // Display goal status
+      const goalStatusElement = document.getElementById('goalStatus');
+      goalStatusElement.innerHTML = `Goal Status: $${remainingAmount} remaining out of $${goal}.`;
+
+      // Display saved details
+      displaySavedDetails();
+    }
+
+    function calculateRemainingAmount() {
+      const goal = 72000; // $72,000 goal
+      const savedDetails = JSON.parse(localStorage.getItem('moneyDetails')) || [];
+      const spendHistory = JSON.parse(localStorage.getItem('spendHistory')) || [];
+      const earnedAmount = savedDetails.reduce((total, details) => total + details.earned, 0);
+      const spentAmount = spendHistory.reduce((total, details) => total + details.spent, 0);
+      const remainingAmount = goal - earnedAmount + spentAmount;
+      return Math.max(remainingAmount, 0); // Ensure it doesn't go below 0
+    }
+
+    function displaySavedDetails() {
+      const savedDetailsContainer = document.getElementById('savedDetailsContainer');
+      savedDetailsContainer.innerHTML = '<h2>Saved Details</h2>';
+
+      const savedDetails = JSON.parse(localStorage.getItem('moneyDetails')) || [];
+      savedDetails.forEach(details => {
+        const detailsElement = document.createElement('div');
+        detailsElement.innerHTML = `<p>${details.date}: Earned $${details.earned}, Spent $${details.spent}</p>`;
+        savedDetailsContainer.appendChild(detailsElement);
+      });
+    }
+
+    function displayCalendar() {
+      const calendarContainer = document.getElementById('calendarContainer');
+      calendarContainer.innerHTML = '<h2>Calendar</h2>';
+
+      const savedDetails = JSON.parse(localStorage.getItem('moneyDetails')) || [];
+      const spendHistory = JSON.parse(localStorage.getItem('spendHistory')) || [];
+      const allDetails = [...savedDetails, ...spendHistory];
+
+      allDetails.forEach(details => {
+        const date = new Date(details.date);
+        const day = date.getDate();
+        const month = date.getMonth() + 1; // Months are 0-indexed
+        const year = date.getFullYear();
+        const dateString = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
+
+        const calendarElement = document.createElement('div');
+        calendarElement.innerHTML = `<p>${dateString}: Earned $${details.earned || 0}, Spent $${details.spent || 0}</p>`;
+        calendarContainer.appendChild(calendarElement);
+      });
+    }
+
+    function displayDetailsForDate() {
+      const datePicker = document.getElementById('datePicker');
+      const selectedDate = datePicker.value;
+
+      const savedDetails = JSON.parse(localStorage.getItem('moneyDetails')) || [];
+      const spendHistory = JSON.parse(localStorage.getItem('spendHistory')) || [];
+      const allDetails = [...savedDetails, ...spendHistory];
+
+      const detailsForDate = allDetails.find(details => details.date === selectedDate);
+
+      if (detailsForDate) {
+        const detailsElement = document.getElementById('savedDetailsContainer');
+        detailsElement.innerHTML = `<h2>Details for ${selectedDate}</h2><p>Earned $${detailsForDate.earned || 0}, Spent $${detailsForDate.spent || 0}</p>`;
+      } else {
+        alert(`No details found for ${selectedDate}.`);
+      }
+    }
+
+    function calculatePerDayGoal() {
+      const remainingAmount = calculateRemainingAmount();
+      const currentDate = new Date();
+      const currentDateMilliseconds = currentDate.getTime();
+      const juneDate = new Date(currentDate.getFullYear(), 5, 1); // Month is 0-indexed (June is 5)
+      const juneDateMilliseconds = juneDate.getTime();
+      const totalDays = Math.ceil((juneDateMilliseconds - currentDateMilliseconds) / (1000 * 3600 * 24)); // Calculate total days remaining
+
+      const perDayGoal = remainingAmount / totalDays;
+
+      const perDayCalculationElement = document.getElementById('perDayCalculation');
+      perDayCalculationElement.innerHTML = `To achieve your goal by June, you need to earn $${perDayGoal.toFixed(2)} per day.`;
+    }
+
+    // Display initial goal status
+    window.onload = function () {
+      const goalStatusElement = document.getElementById('goalStatus');
+      const remainingAmount = calculateRemainingAmount();
+      const goal = 72000; // $72,000 goal
+      goalStatusElement.innerHTML = `Goal Status: $${remainingAmount} remaining out of $${goal}.`;
+    };
+  </script>
+
+</body>
+</html>
